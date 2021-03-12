@@ -1,0 +1,2 @@
+# OpenGLPractice
+ OpenGL studies project
