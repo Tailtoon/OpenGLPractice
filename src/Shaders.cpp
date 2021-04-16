@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+using namespace glm;
 
 GLuint createShaderFromSources(const char* vertexShader, const char* fragmentShader){
     GLuint vs = glCreateShader (GL_VERTEX_SHADER);
@@ -45,16 +46,24 @@ GLuint createShader(){
         // vertex attribute
         attribute vec3 aPos;
         attribute vec3 aColor;
+        attribute vec3 aNormal;
         attribute vec2 aCoord;
         // uniforms
         uniform mat4 uModelViewProjMat;
         // output
         varying vec3 vColor;
+        varying vec3 vNormal;
         varying vec2 vCoord;
+        varying vec3 vFragPos;
         void main () {
-            vec4 vertexVec4 = vec4(aPos, 1.0);      // последняя компонента 1, тк это точка
+            vec4 vertexVec4 = vec4(aPos, 1.0f);      // последняя компонента 1, тк это точка
             // вычисляем позицию точки в пространстве OpenGL
             gl_Position = uModelViewProjMat * vertexVec4;
+
+            vNormal = mat3(uModelViewProjMat) * aNormal;
+
+            vFragPos = vec3(uModelViewProjMat * vec4(aPos, 1.0));
+
             // цвет и текстурные координаты просто пробрасываем для интерполяции
             vColor = aColor;
             vCoord = aCoord;
@@ -62,10 +71,14 @@ GLuint createShader(){
     );
     const char* fragmentShader = STRINGIFY_SHADER(
         varying vec3 vColor;
+        varying vec3 vNormal;
         varying vec2 vCoord;
+        varying vec3 vFragPos;
         uniform sampler2D newTexture0;
+
         void main () {
             gl_FragColor = texture2D(newTexture0, vCoord) * vec4(vColor, 1.0);
+
         }
     );
 

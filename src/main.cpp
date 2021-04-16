@@ -171,6 +171,7 @@ int main(int argc, char *argv[]) {
 
     // аттрибуты вершин шейдера
     int posAttribLocation = glGetAttribLocation(shaderProgram, "aPos");
+    int normalAttribLocation = glGetAttribLocation(shaderProgram, "aNormal");
     int colorAttribLocation = glGetAttribLocation(shaderProgram, "aColor");
     int texAttribLocation = glGetAttribLocation(shaderProgram, "aCoord");
     CHECK_GL_ERRORS();
@@ -235,8 +236,9 @@ int main(int argc, char *argv[]) {
 
         // матрица модель-вид-проекция
         mat4 modelViewProjMatrix = mat4(1.0);
+        modelViewProjMatrix = scale(modelViewProjMatrix, vec3(0.6f, 0.6f, 0.6f));
 
-        modelViewProjMatrix = rotate(modelViewProjMatrix, float(time), vec3(1.0f, 1.0f, 0.0f));
+        modelViewProjMatrix = rotate(modelViewProjMatrix, float(time), vec3(1.0f, 1.0f, 1.0f));
 //        degrees += 0.1f;
 //        if (degrees >= 180) degrees = 0;
 //        //cout << degrees << ' ';
@@ -249,6 +251,9 @@ int main(int argc, char *argv[]) {
         // Позиции
         glEnableVertexAttribArray(posAttribLocation);
         glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, pos));
+        // Normals
+        glEnableVertexAttribArray(normalAttribLocation);
+        glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, normal));
         // Цвет вершин
         glEnableVertexAttribArray(colorAttribLocation);
         glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, color));
