@@ -76,8 +76,63 @@ GLuint createShader(){
         varying vec3 vFragPos;
         uniform sampler2D newTexture0;
 
+        struct Light {
+            vec3 position;
+            vec3 color;
+
+            float ambient;
+            vec3 diffuse;
+            vec3 specular;
+
+            float constant;
+            float linear;
+            float quadratic;
+        };
+
+        Light light = Light(
+                    vec3(0.0f, 1.0f, 0.0f),
+                    vec3(1.0f, 1.0f, 1.0f),
+
+                    0.2f,
+                    vec3(0.9f, 0.9f, 0.9f),
+                    vec3(1.0f, 1.0f, 1.0f),
+
+                    1.0f,
+                    0.09f,
+                    0.032f
+                    );
+
         void main () {
-            gl_FragColor = texture2D(newTexture0, vCoord) * vec4(vColor, 1.0);
+//            if (vColor.x > 0.5 && vColor.y > 0.5 && vColor.z > 0.7) discard;
+
+                // ambient
+                vec3 ambient = light.ambient * vec3(texture2D(newTexture0, vCoord));
+
+                // diffuse
+                vec3 norm = normalize(vNormal);
+                vec3 lightDir = normalize(light.position - vFragPos);
+                float diff = max(dot(norm, lightDir), 0.0);
+                vec3 diffuse = light.diffuse * diff * vec3(texture2D(newTexture0, vCoord));
+
+//                // specular
+//                vec3 viewDir = normalize(viewPos - vFragPos);
+//                vec3 reflectDir = reflect(-lightDir, norm);
+//                float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+//                vec3 specular = light.specular * spec * vec3(texture2D(newTexture0, vCoord));
+//                vec3 specular = vec3(0.0f, 0.0f, 0.0f);
+
+//                // attenuation
+//                float distance    = length(light.position - vFragPos);
+//                float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
+//                ambient  *= attenuation;
+//                diffuse   *= attenuation;
+//                specular *= attenuation;
+
+                vec3 result = ambient + diffuse;
+                gl_FragColor = vec4(result * vColor, 1.0);
+
+                //gl_FragColor = texture2D(newTexture0, vCoord) * vec4(vColor * ambient, 1.0);
 
         }
     );
