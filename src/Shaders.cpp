@@ -93,7 +93,7 @@ GLuint createShader(){
                     vec3(0.0f, 1.0f, 0.0f),
                     vec3(1.0f, 1.0f, 1.0f),
 
-                    0.2f,
+                    0.6f,
                     vec3(0.9f, 0.9f, 0.9f),
                     vec3(1.0f, 1.0f, 1.0f),
 

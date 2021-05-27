@@ -16,6 +16,7 @@
 #include "PngLoader.h"
 #include "Helpers.h"
 #include "Vertex.h"
+#include "Sphere.h"
 #include "Figures.h"
 #include "Shaders.h"
 #include "ObjLoader.h"
@@ -174,25 +175,29 @@ int main(int argc, char *argv[]) {
     int normalAttribLocation = glGetAttribLocation(shaderProgram, "aNormal");
     int colorAttribLocation = glGetAttribLocation(shaderProgram, "aColor");
     int texAttribLocation = glGetAttribLocation(shaderProgram, "aCoord");
+
     CHECK_GL_ERRORS();
 
     // юниформы шейдера
     int modelViewProjMatrixLocation = glGetUniformLocation(shaderProgram, "uModelViewProjMat");
     CHECK_GL_ERRORS();
 
+    Sphere sphere(0.5f, 100, 100);
+
     // VBO, данные о вершинах
     GLuint VBO = 0;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     //glBufferData(GL_ARRAY_BUFFER, triangleVertexCount * sizeof(Vertex), triangleVertexes, GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, cubeVertexCount * sizeof(Vertex), cubeVertexes, GL_STATIC_DRAW);
+//    glBufferData(GL_ARRAY_BUFFER, cubeVertexCount * sizeof(Vertex), cubeVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sphere.getNumOfVertices() * sizeof(Vertex), sphere.getSphereVertices(), GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     CHECK_GL_ERRORS();
     
     // отключаем отображение задней части полигонов
     //glEnable(GL_CULL_FACE);
     // отбрасываться будут задние грани
-    glCullFace(GL_BACK);
+    //glCullFace(GL_BACK);
     // Определяем, в каком направлении должный обходиться вершины, для передней части (против часовой стрелки?)
     // задняя часть будет отбрасываться
     glFrontFace(GL_CCW);
@@ -219,7 +224,7 @@ int main(int argc, char *argv[]) {
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         CHECK_GL_ERRORS();
     }
-//    float degrees = 1.0f;
+
     while (!glfwWindowShouldClose(window)){
         // приращение времени
         double newTime = glfwGetTime();
@@ -236,12 +241,9 @@ int main(int argc, char *argv[]) {
 
         // матрица модель-вид-проекция
         mat4 modelViewProjMatrix = mat4(1.0);
-        modelViewProjMatrix = scale(modelViewProjMatrix, vec3(0.6f, 0.6f, 0.6f));
-
-        modelViewProjMatrix = rotate(modelViewProjMatrix, float(time), vec3(1.0f, 1.0f, 1.0f));
-//        degrees += 0.1f;
-//        if (degrees >= 180) degrees = 0;
-//        //cout << degrees << ' ';
+        modelViewProjMatrix = scale(modelViewProjMatrix, vec3(1.0f, 1.0f, 1.0f));
+        modelViewProjMatrix = rotate(modelViewProjMatrix, M_PI_2f32, vec3(1.0f, 0.0f, 0.0f));
+        modelViewProjMatrix = rotate(modelViewProjMatrix, float(time), vec3(0.0f, 0.0f, 1.0f));
         // выставляем матрицу трансформации в пространство OpenGL
         glUniformMatrix4fv(modelViewProjMatrixLocation, 1, false, glm::value_ptr(modelViewProjMatrix));
         
@@ -263,8 +265,12 @@ int main(int argc, char *argv[]) {
         CHECK_GL_ERRORS();
         
         // рисуем
-        //glDrawArrays(GL_TRIANGLES, 0, triangleVertexCount); // draw points 0-3 from the currently bound VAO with current in-use shader
-        glDrawArrays(GL_TRIANGLES, 0, cubeVertexCount); // draw points 0-3 from the currently bound VAO with current in-use shader
+        //glDrawArrays(GL_TRIANGLES, 0, cubeVertexCount); // draw points 0-35 from the currently bound VAO with current in-use shader
+        //glDrawArrays(GL_TRIANGLES, 0, sphere.getNumOfVertices());
+        glDrawElements(GL_TRIANGLES,                    // primitive type
+                       sphere.getIndices().size(),          // # of indices
+                       GL_UNSIGNED_INT,                 // data type
+                       sphere.getIndices().data());                       // offset to indices
 
         // VBO off
         glBindBuffer(GL_ARRAY_BUFFER, 0);

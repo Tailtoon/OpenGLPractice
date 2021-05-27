@@ -3,6 +3,8 @@
 
 #include <glm.hpp>
 #include "Vertex.h"
+#include <math.h>
+#include <vector>
 
 using namespace glm;
 
@@ -16,7 +18,7 @@ int cubeVertexCount = 3 * 2 * 6;
 //    Vertex(vec3( 1.0f, -1.0f,  1.0f),   vec3(0.5f, 0.8f, 0.5f))
 //};
 
-Vertex cubeVertexes[] = {
+Vertex cubeVertices[] = {
     //               Вершина                      Нормаль                    Цвет                   Текстура
     //Back
     Vertex(vec3( 0.5f,  0.5f, -0.5f), vec3( 0.0f,  0.0f, -1.0f), vec3( 0.5f,  0.8f,  0.5f), vec2( 0.5f,  0.5f)),
