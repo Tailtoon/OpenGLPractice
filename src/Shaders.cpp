@@ -51,6 +51,7 @@ GLuint createShader(){
         // uniforms
         uniform mat4 uModelViewProjMat;
         uniform mat4 uViewMat;
+        uniform mat4 uProjMat;
         // output
         varying vec3 vColor;
         varying vec3 vNormal;
@@ -66,7 +67,7 @@ GLuint createShader(){
 
             vFragPos = vec3(uModelViewProjMat * vec4(aPos, 1.0f));
 
-            vLightPos = vec3(uViewMat * vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            vLightPos = vec3(uProjMat * uViewMat * vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
             // цвет и текстурные координаты просто пробрасываем для интерполяции
             vColor = aColor;
@@ -116,6 +117,7 @@ GLuint createShaderForSun()
         // uniforms
         uniform mat4 uModelViewProjMat;
         uniform mat4 uViewMat;
+        uniform mat4 uProjMat;
         // output
         varying vec3 vColor;
         varying vec3 vNormal;

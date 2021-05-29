@@ -220,6 +220,7 @@ int main(int argc, char *argv[]) {
     // юниформы шейдера
     int modelViewProjMatrixLocation = glGetUniformLocation(shaderProgram, "uModelViewProjMat");
     int modelViewLocation = glGetUniformLocation(shaderProgram, "uViewMat");
+    int projMatrixLocation = glGetUniformLocation(shaderProgram, "uProjMat");
     CHECK_GL_ERRORS();
 
     Sphere sphere(1.0f, 100, 100);
@@ -367,7 +368,8 @@ int main(int argc, char *argv[]) {
 
             // выставляем матрицу трансформации в пространство OpenGL
             SolarSystem[i].rotate(vec3(0, 0, 0));
-            mat4 proj = perspective(radians(45.0f), (float)width/(float)height, 0.1f, 100.0f);
+            mat4 proj = perspective(radians(45.0f), (float)width/(float)height, 0.0001f, 100.0f);
+            glUniformMatrix4fv(projMatrixLocation, 1, false, glm::value_ptr(proj));
             glUniformMatrix4fv(modelViewProjMatrixLocation, 1, false, glm::value_ptr(proj * camera->getView() * SolarSystem[i].getMatrix()));
             mat4 view = camera->getView();
             glUniformMatrix4fv(modelViewLocation, 1, false, glm::value_ptr(view));
