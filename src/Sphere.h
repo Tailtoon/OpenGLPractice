@@ -10,6 +10,7 @@ using namespace glm;
 
 class Sphere
 {
+private:
     float radius;
     int sectorCount;
     int stackCount;
@@ -17,10 +18,10 @@ class Sphere
     std::vector<Vertex> SphereVertices;
     std::vector<int> indices;
     std::vector<int> lineIndices;
-
 public:
     Sphere(float r, int sectorc, int stackc);
     ~Sphere();
+
     Vertex* getSphereVertices();
     std::size_t getNumOfVertices();
     std::vector<int> getIndices();

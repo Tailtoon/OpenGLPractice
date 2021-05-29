@@ -5,5 +5,6 @@
 #include <glm.hpp>
 
 GLuint createShader();
+GLuint createShaderForSun();
 
 #endif

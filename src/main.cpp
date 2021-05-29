@@ -18,8 +18,10 @@
 #include "Vertex.h"
 #include "Sphere.h"
 #include "Figures.h"
+#include "SolarSystemBody.h"
 #include "Shaders.h"
 #include "ObjLoader.h"
+#include "Camera.h"
 
 // Документация
 // https://www.opengl.org/sdk/docs/man/html/
@@ -32,8 +34,14 @@ using namespace glm;
 // Текущие переменные для модели
 bool leftButtonPressed = false;
 bool rightPressed = false;
-double lastCursorPosX = 0.0;
-double lastCursorPosY = 0.0;
+bool wPressed = false;
+bool aPressed = false;
+bool sPressed = false;
+bool dPressed = false;
+int width = 1024;
+int height = 1024;
+double lastCursorPosX = 512.0;
+double lastCursorPosY = 512.0;
 
 void glfwErrorCallback(int error, const char* description) {
     printf("OpenGL error = %d\n description = %s\n\n", error, description);
@@ -41,10 +49,29 @@ void glfwErrorCallback(int error, const char* description) {
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     // Выходим по нажатию Escape
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-    }
-    // по пробелу включаем или выключаем вращение автоматом
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    } else if (key == GLFW_KEY_A)
+    {
+        if (action == GLFW_PRESS)
+            aPressed = true;
+        else aPressed = false;
+    } else if (key == GLFW_KEY_D)
+    {
+        if (action == GLFW_PRESS)
+            dPressed = true;
+        else dPressed = false;
+    } else if (key == GLFW_KEY_W)
+    {
+        if (action == GLFW_PRESS)
+            wPressed = true;
+        else wPressed = false;
+    } else if (key == GLFW_KEY_S)
+    {
+        if (action == GLFW_PRESS)
+            sPressed = true;
+        else sPressed = false;
     }
 }
 
@@ -68,12 +95,23 @@ void glfwMouseButtonCallback(GLFWwindow* window, int button, int state, int mod)
 }
 
 void glfwCursorCallback(GLFWwindow* window, double x, double y) {
+    Camera* camera = Camera::getInstance();
     // при нажатой левой кнопки - вращаем по X и Y
-    if(leftButtonPressed){
+    if(leftButtonPressed)
+    {
+        double centerx = width / 2;
+        double centery = height / 2;
+
+        double offsetx = x - lastCursorPosX;
+        double offsety = lastCursorPosY - y;
+
+        camera->rotate(vec2(offsetx, offsety));
     }
 
     // при нажатой левой кнопки - перемещаем по X Y
-    if(rightPressed){
+    if(rightPressed)
+    {
+
     }
 
     lastCursorPosX = x;
@@ -112,7 +150,7 @@ int main(int argc, char *argv[]) {
 #endif
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+    window = glfwCreateWindow(1024, 1024, "Simple example", NULL, NULL);
     if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -168,6 +206,7 @@ int main(int argc, char *argv[]) {
 
     // Шейдеры
     GLuint shaderProgram = createShader();
+    GLuint shaderProgramForSun = createShaderForSun();
     CHECK_GL_ERRORS();
 
     // аттрибуты вершин шейдера
@@ -180,9 +219,10 @@ int main(int argc, char *argv[]) {
 
     // юниформы шейдера
     int modelViewProjMatrixLocation = glGetUniformLocation(shaderProgram, "uModelViewProjMat");
+    int modelViewLocation = glGetUniformLocation(shaderProgram, "uViewMat");
     CHECK_GL_ERRORS();
 
-    Sphere sphere(0.5f, 100, 100);
+    Sphere sphere(1.0f, 100, 100);
 
     // VBO, данные о вершинах
     GLuint VBO = 0;
@@ -211,19 +251,84 @@ int main(int argc, char *argv[]) {
     // текущее время
     double time = glfwGetTime();
 
-    // Загрузка текстуры
-    ImageData info = loadPngImage("/home/tailtoon/OpenGL/OpenGL_Practice_FULL-template/res/test.png");
-    uint textureId = 0;
-    if(info.loaded){
-        glGenTextures(1, &textureId);
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,              // формат внутри OpenGL
-                     info.width, info.height, 0,            // ширинна, высота, границы
-                     info.withAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, info.data); // формат входных данных
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        CHECK_GL_ERRORS();
+    // Создаем объекты солнечной системы
+    vector<SolarSystemBody> SolarSystem;
+    for (int i = 0; i < 9; i++)
+    {
+        // Загрузка текстуры объекта
+        ImageData info = loadPngImage(("/home/tailtoon/OpenGL/OpenGL_Practice_FULL-template/res/test" + to_string(i) + ".png").c_str());
+        uint textureId = 0;
+        if(info.loaded){
+            glGenTextures(1, &textureId);
+            glBindTexture(GL_TEXTURE_2D, textureId);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,              // формат внутри OpenGL
+                         info.width, info.height, 0,            // ширинна, высота, границы
+                         info.withAlpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, info.data); // формат входных данных
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            CHECK_GL_ERRORS();
+        }
+
+        // матрица модель-вид-проекция
+        vec3 distance;
+        vec3 sc;
+        float rotateSpeed;
+        float constant = 696340 * 4;
+        switch (i)
+        {
+        case 0: //Солнце
+            distance = vec3(0.0f, 0.0f, 0.0f);
+            sc = vec3(1.0f) * (696340/constant);
+            rotateSpeed = 0;
+            break;
+        case 1: //Меркурий
+            distance = vec3(0.2f, 0.2f, 0.0f);
+            sc = vec3(1.0f) * (2440/constant);
+            rotateSpeed = 0.48;
+            break;
+        case 2: //Венера
+            distance = vec3(0.3f, 0.3f, 0.0f);
+            sc = vec3(1.0f) * (6052/constant);
+            rotateSpeed = 0.35;
+            break;
+        case 3: //Земля
+            distance = vec3(0.4f, 0.4f, 0.0f);
+            sc = vec3(1.0f) * (6378/constant);
+            rotateSpeed = 0.30;
+            break;
+        case 4: //Марс
+            distance = vec3(0.5f, 0.5f, 0.0f);
+            sc = vec3(1.0f) * (3397/constant);
+            rotateSpeed = 0.24;
+            break;
+        case 5: //Юпитер
+            distance = vec3(0.6f, 0.6f, 0.0f);
+            sc = vec3(1.0f) * (71490/constant);
+            rotateSpeed = 0.13;
+            break;
+        case 6: //Сатурн
+            distance = vec3(0.7f, 0.7f, 0.0f);
+            sc = vec3(1.0f) * (60270/constant);
+            rotateSpeed = 0.10;
+            break;
+        case 7: //Уран
+            distance = vec3(0.8f, 0.8f, 0.0f);
+            sc = vec3(1.0f) * (25560/constant);
+            rotateSpeed = 0.07;
+            break;
+        case 8: //Нептун
+            distance = vec3(0.9f, 0.9f, 0.0f);
+            sc = vec3(1.0f) * (24760/constant);
+            rotateSpeed = 0.05;
+            break;
+        }
+        //modelViewProjMatrix = rotate(modelViewProjMatrix, M_PI_2f32, vec3(1.0f, 0.0f, 0.0f));
+        //modelViewProjMatrix = rotate(modelViewProjMatrix, float(time), vec3(0.0f, 0.0f, 1.0f));
+
+        SolarSystem.push_back(SolarSystemBody(1.0f, 100, 100, distance, sc, rotateSpeed, textureId));
     }
+
+    Camera* camera = Camera::getInstance();
 
     while (!glfwWindowShouldClose(window)){
         // приращение времени
@@ -234,50 +339,73 @@ int main(int argc, char *argv[]) {
         // wipe the drawing surface clear
         glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glUseProgram (shaderProgram);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
+        if (aPressed)
+        {
+            camera->move("left");
+        }
+        if (dPressed)
+        {
+            camera->move("right");
+        }
+        if (wPressed)
+        {
+            camera->move("front");
+        }
+        if (sPressed)
+        {
+            camera->move("back");
+        }
 
-        // матрица модель-вид-проекция
-        mat4 modelViewProjMatrix = mat4(1.0);
-        modelViewProjMatrix = scale(modelViewProjMatrix, vec3(1.0f, 1.0f, 1.0f));
-        modelViewProjMatrix = rotate(modelViewProjMatrix, M_PI_2f32, vec3(1.0f, 0.0f, 0.0f));
-        modelViewProjMatrix = rotate(modelViewProjMatrix, float(time), vec3(0.0f, 0.0f, 1.0f));
-        // выставляем матрицу трансформации в пространство OpenGL
-        glUniformMatrix4fv(modelViewProjMatrixLocation, 1, false, glm::value_ptr(modelViewProjMatrix));
-        
-        // sizeof(Vertex) - размер блока данных о вершине
-        // OFFSETOF(Vertex, color) - смещение от начала
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // Позиции
-        glEnableVertexAttribArray(posAttribLocation);
-        glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, pos));
-        // Normals
-        glEnableVertexAttribArray(normalAttribLocation);
-        glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, normal));
-        // Цвет вершин
-        glEnableVertexAttribArray(colorAttribLocation);
-        glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, color));
-        // Textures
-        glEnableVertexAttribArray(texAttribLocation);
-        glVertexAttribPointer(texAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, texCoord));
-        CHECK_GL_ERRORS();
-        
-        // рисуем
-        //glDrawArrays(GL_TRIANGLES, 0, cubeVertexCount); // draw points 0-35 from the currently bound VAO with current in-use shader
-        //glDrawArrays(GL_TRIANGLES, 0, sphere.getNumOfVertices());
-        glDrawElements(GL_TRIANGLES,                    // primitive type
-                       sphere.getIndices().size(),          // # of indices
-                       GL_UNSIGNED_INT,                 // data type
-                       sphere.getIndices().data());                       // offset to indices
+        for (int i = 0; i < 9; i++)
+        {
+            if (i == 0)
+                glUseProgram (shaderProgramForSun);
+            else glUseProgram(shaderProgram);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, SolarSystem[i].getTextureId());
 
-        // VBO off
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+            // выставляем матрицу трансформации в пространство OpenGL
+            SolarSystem[i].rotate(vec3(0, 0, 0));
+            mat4 proj = perspective(radians(45.0f), (float)width/(float)height, 0.1f, 100.0f);
+            glUniformMatrix4fv(modelViewProjMatrixLocation, 1, false, glm::value_ptr(proj * camera->getView() * SolarSystem[i].getMatrix()));
+            mat4 view = camera->getView();
+            glUniformMatrix4fv(modelViewLocation, 1, false, glm::value_ptr(view));
+
+            // sizeof(Vertex) - размер блока данных о вершине
+            // OFFSETOF(Vertex, color) - смещение от начала
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            // Позиции
+            glEnableVertexAttribArray(posAttribLocation);
+            glVertexAttribPointer(posAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, pos));
+            // Normals
+            glEnableVertexAttribArray(normalAttribLocation);
+            glVertexAttribPointer(normalAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, normal));
+            // Цвет вершин
+            glEnableVertexAttribArray(colorAttribLocation);
+            glVertexAttribPointer(colorAttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, color));
+            // Textures
+            glEnableVertexAttribArray(texAttribLocation);
+            glVertexAttribPointer(texAttribLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), OFFSETOF(Vertex, texCoord));
+            CHECK_GL_ERRORS();
+
+            // рисуем
+            //glDrawArrays(GL_TRIANGLES, 0, cubeVertexCount); // draw points 0-35 from the currently bound VAO with current in-use shader
+            //glDrawArrays(GL_TRIANGLES, 0, sphere.getNumOfVertices());
+            glDrawElements(GL_TRIANGLES,                    // primitive type
+                           SolarSystem[i].getIndices().size(),         // # of indices
+                           GL_UNSIGNED_INT,                 // data type
+                           SolarSystem[i].getIndices().data());        // offset to indices
+
+            // VBO off
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    Camera::deleteInstance();
 
     glDeleteProgram(shaderProgram);
     glDeleteBuffers(1, &VBO);

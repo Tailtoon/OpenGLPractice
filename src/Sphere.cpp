@@ -101,7 +101,7 @@ Sphere::Sphere(float r, int sectorc, int stackc) : radius(r), sectorCount(sector
     count = vertices.size();
     for(i = 0, j = 0; i < count; i += 3, j += 2)
     {
-        Vertex tmp(vec3(vertices[i], vertices[i+1], vertices[i+2]), vec3(normals[i], normals[i+1], normals[i+2]), vec3(0.3f, 1.0f, 1.0f), vec2(texCoords[j], texCoords[j+1]));
+        Vertex tmp(vec3(vertices[i], vertices[i+1], vertices[i+2]), vec3(normals[i], normals[i+1], normals[i+2]), vec3(1.0f, 1.0f, 1.0f), vec2(texCoords[j], texCoords[j+1]));
         SphereVertices.push_back(tmp);
     }
 }
